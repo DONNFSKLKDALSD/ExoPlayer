@@ -17,19 +17,23 @@ package com.google.android.exoplayer2.ui;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.CheckedTextView;
 import android.widget.LinearLayout;
+
 import androidx.annotation.AttrRes;
 import androidx.annotation.Nullable;
+
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.Tracks;
 import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.trackselection.TrackSelectionOverride;
 import com.google.android.exoplayer2.util.Assertions;
 import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -298,7 +302,9 @@ public class TrackSelectionView extends LinearLayout {
             (CheckedTextView) inflater.inflate(trackViewLayoutId, this, false);
         trackView.setBackgroundResource(selectableItemBackgroundResourceId);
         trackView.setText(trackNameProvider.getTrackName(trackInfos[trackIndex].getFormat()));
+        trackView.setEllipsize(TextUtils.TruncateAt.MIDDLE);
         trackView.setTag(trackInfos[trackIndex]);
+        trackView.setSingleLine(true);
         if (trackGroup.isTrackSupported(trackIndex)) {
           trackView.setFocusable(true);
           trackView.setOnClickListener(componentListener);

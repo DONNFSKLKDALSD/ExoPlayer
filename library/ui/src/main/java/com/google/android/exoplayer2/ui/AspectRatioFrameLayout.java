@@ -21,8 +21,10 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
+
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -94,6 +96,7 @@ public final class AspectRatioFrameLayout extends FrameLayout {
 
   @Nullable private AspectRatioListener aspectRatioListener;
 
+  private float oriAspectRatio;
   private float videoAspectRatio;
   private @ResizeMode int resizeMode;
 
@@ -126,6 +129,7 @@ public final class AspectRatioFrameLayout extends FrameLayout {
   public void setAspectRatio(float widthHeightRatio) {
     if (this.videoAspectRatio != widthHeightRatio) {
       this.videoAspectRatio = widthHeightRatio;
+      this.oriAspectRatio = videoAspectRatio;
       requestLayout();
     }
   }
@@ -165,6 +169,14 @@ public final class AspectRatioFrameLayout extends FrameLayout {
       return;
     }
 
+    if (resizeMode == RESIZE_MODE_FIXED_WIDTH) {
+      videoAspectRatio = 16f / 9f;
+    } else if (resizeMode == RESIZE_MODE_FIXED_HEIGHT) {
+      videoAspectRatio = 4f / 3f;
+    } else {
+      videoAspectRatio = oriAspectRatio;
+    }
+
     int width = getMeasuredWidth();
     int height = getMeasuredHeight();
     float viewAspectRatio = (float) width / height;
@@ -176,12 +188,6 @@ public final class AspectRatioFrameLayout extends FrameLayout {
     }
 
     switch (resizeMode) {
-      case RESIZE_MODE_FIXED_WIDTH:
-        height = (int) (width / videoAspectRatio);
-        break;
-      case RESIZE_MODE_FIXED_HEIGHT:
-        width = (int) (height * videoAspectRatio);
-        break;
       case RESIZE_MODE_ZOOM:
         if (aspectDeformation > 0) {
           width = (int) (height * videoAspectRatio);
@@ -189,6 +195,8 @@ public final class AspectRatioFrameLayout extends FrameLayout {
           height = (int) (width / videoAspectRatio);
         }
         break;
+      case RESIZE_MODE_FIXED_HEIGHT:
+      case RESIZE_MODE_FIXED_WIDTH:
       case RESIZE_MODE_FIT:
         if (aspectDeformation > 0) {
           height = (int) (width / videoAspectRatio);

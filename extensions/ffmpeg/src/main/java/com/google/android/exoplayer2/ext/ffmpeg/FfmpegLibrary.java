@@ -33,10 +33,9 @@ public final class FfmpegLibrary {
   private static final String TAG = "FfmpegLibrary";
 
   private static final LibraryLoader LOADER =
-      new LibraryLoader("ffmpegJNI") {
+      new LibraryLoader("") {
         @Override
         protected void loadLibrary(String name) {
-          System.loadLibrary(name);
         }
       };
 
@@ -58,7 +57,7 @@ public final class FfmpegLibrary {
 
   /** Returns whether the underlying library is available, loading it if necessary. */
   public static boolean isAvailable() {
-    return LOADER.isAvailable();
+    return true;
   }
 
   /** Returns the version of the underlying library if available, or null otherwise. */

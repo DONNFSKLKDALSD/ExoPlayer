@@ -21,9 +21,11 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 import android.os.Looper;
 import android.os.SystemClock;
+
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayerLibraryInfo;
 import com.google.android.exoplayer2.MediaItem;
@@ -56,6 +58,7 @@ import com.google.android.exoplayer2.upstream.LoadErrorHandlingPolicy;
 import com.google.android.exoplayer2.upstream.TransferListener;
 import com.google.android.exoplayer2.util.Util;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+
 import java.io.IOException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -353,7 +356,6 @@ public final class HlsMediaSource extends BaseMediaSource
           playlistTrackerFactory.createTracker(
               hlsDataSourceFactory, loadErrorHandlingPolicy, playlistParserFactory),
           elapsedRealTimeOffsetMs,
-          allowChunklessPreparation,
           metadataType,
           useSessionKeys);
     }
@@ -389,7 +391,6 @@ public final class HlsMediaSource extends BaseMediaSource
       LoadErrorHandlingPolicy loadErrorHandlingPolicy,
       HlsPlaylistTracker playlistTracker,
       long elapsedRealTimeOffsetMs,
-      boolean allowChunklessPreparation,
       @MetadataType int metadataType,
       boolean useSessionKeys) {
     this.localConfiguration = checkNotNull(mediaItem.localConfiguration);
@@ -402,7 +403,7 @@ public final class HlsMediaSource extends BaseMediaSource
     this.loadErrorHandlingPolicy = loadErrorHandlingPolicy;
     this.playlistTracker = playlistTracker;
     this.elapsedRealTimeOffsetMs = elapsedRealTimeOffsetMs;
-    this.allowChunklessPreparation = allowChunklessPreparation;
+    this.allowChunklessPreparation = mediaItem.decode == 1;
     this.metadataType = metadataType;
     this.useSessionKeys = useSessionKeys;
   }

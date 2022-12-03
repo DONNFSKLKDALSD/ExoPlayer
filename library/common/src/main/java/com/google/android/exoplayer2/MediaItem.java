@@ -87,6 +87,7 @@ public final class MediaItem implements Bundleable {
     // are removed.
     private LiveConfiguration.Builder liveConfiguration;
     private RequestMetadata requestMetadata;
+    private int decode;
 
     /** Creates a builder. */
     @SuppressWarnings("deprecation") // Temporarily uses DrmConfiguration.Builder() constructor.
@@ -534,6 +535,12 @@ public final class MediaItem implements Bundleable {
       return this;
     }
 
+    @CanIgnoreReturnValue
+    public Builder setDecode(int decode) {
+      this.decode = decode;
+      return this;
+    }
+
     /** Sets the media metadata. */
     @CanIgnoreReturnValue
     public Builder setMediaMetadata(MediaMetadata mediaMetadata) {
@@ -573,7 +580,8 @@ public final class MediaItem implements Bundleable {
           localConfiguration,
           liveConfiguration.build(),
           mediaMetadata != null ? mediaMetadata : MediaMetadata.EMPTY,
-          requestMetadata);
+          requestMetadata,
+          decode);
     }
   }
 
@@ -1950,6 +1958,8 @@ public final class MediaItem implements Bundleable {
   /** The media {@link RequestMetadata}. */
   public final RequestMetadata requestMetadata;
 
+  public final int decode;
+
   // Using PlaybackProperties and ClippingProperties until they're deleted.
   @SuppressWarnings("deprecation")
   private MediaItem(
@@ -1958,7 +1968,8 @@ public final class MediaItem implements Bundleable {
       @Nullable PlaybackProperties localConfiguration,
       LiveConfiguration liveConfiguration,
       MediaMetadata mediaMetadata,
-      RequestMetadata requestMetadata) {
+      RequestMetadata requestMetadata,
+      int decode) {
     this.mediaId = mediaId;
     this.localConfiguration = localConfiguration;
     this.playbackProperties = localConfiguration;
@@ -1967,6 +1978,7 @@ public final class MediaItem implements Bundleable {
     this.clippingConfiguration = clippingConfiguration;
     this.clippingProperties = clippingConfiguration;
     this.requestMetadata = requestMetadata;
+    this.decode = decode;
   }
 
   /** Returns a {@link Builder} initialized with the values of this instance. */
@@ -2014,7 +2026,8 @@ public final class MediaItem implements Bundleable {
     FIELD_LIVE_CONFIGURATION,
     FIELD_MEDIA_METADATA,
     FIELD_CLIPPING_PROPERTIES,
-    FIELD_REQUEST_METADATA
+    FIELD_REQUEST_METADATA,
+    FIELD_DECODE
   })
   private @interface FieldNumber {}
 
@@ -2023,6 +2036,7 @@ public final class MediaItem implements Bundleable {
   private static final int FIELD_MEDIA_METADATA = 2;
   private static final int FIELD_CLIPPING_PROPERTIES = 3;
   private static final int FIELD_REQUEST_METADATA = 4;
+  private static final int FIELD_DECODE = 5;
 
   /**
    * {@inheritDoc}
@@ -2038,6 +2052,7 @@ public final class MediaItem implements Bundleable {
     bundle.putBundle(keyForField(FIELD_MEDIA_METADATA), mediaMetadata.toBundle());
     bundle.putBundle(keyForField(FIELD_CLIPPING_PROPERTIES), clippingConfiguration.toBundle());
     bundle.putBundle(keyForField(FIELD_REQUEST_METADATA), requestMetadata.toBundle());
+    bundle.putInt(keyForField(FIELD_DECODE), decode);
     return bundle;
   }
 
@@ -2081,13 +2096,16 @@ public final class MediaItem implements Bundleable {
     } else {
       requestMetadata = RequestMetadata.CREATOR.fromBundle(requestMetadataBundle);
     }
+
+    int decode = checkNotNull(bundle.getInt(keyForField(FIELD_DECODE), 1));
     return new MediaItem(
         mediaId,
         clippingConfiguration,
         /* localConfiguration= */ null,
         liveConfiguration,
         mediaMetadata,
-        requestMetadata);
+        requestMetadata,
+        decode);
   }
 
   private static String keyForField(@FieldNumber int field) {

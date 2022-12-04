@@ -403,7 +403,7 @@ public final class HlsMediaSource extends BaseMediaSource
     this.loadErrorHandlingPolicy = loadErrorHandlingPolicy;
     this.playlistTracker = playlistTracker;
     this.elapsedRealTimeOffsetMs = elapsedRealTimeOffsetMs;
-    this.allowChunklessPreparation = mediaItem.decode == 1;
+    this.allowChunklessPreparation = mediaItem.allowChunklessPreparation;
     this.metadataType = metadataType;
     this.useSessionKeys = useSessionKeys;
   }

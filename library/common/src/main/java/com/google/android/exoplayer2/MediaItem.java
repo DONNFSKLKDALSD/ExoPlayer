@@ -87,7 +87,7 @@ public final class MediaItem implements Bundleable {
     // are removed.
     private LiveConfiguration.Builder liveConfiguration;
     private RequestMetadata requestMetadata;
-    private int decode;
+    private boolean allowChunklessPreparation;
 
     /** Creates a builder. */
     @SuppressWarnings("deprecation") // Temporarily uses DrmConfiguration.Builder() constructor.
@@ -536,8 +536,8 @@ public final class MediaItem implements Bundleable {
     }
 
     @CanIgnoreReturnValue
-    public Builder setDecode(int decode) {
-      this.decode = decode;
+    public Builder setAllowChunklessPreparation(boolean allowChunklessPreparation) {
+      this.allowChunklessPreparation = allowChunklessPreparation;
       return this;
     }
 
@@ -581,7 +581,7 @@ public final class MediaItem implements Bundleable {
           liveConfiguration.build(),
           mediaMetadata != null ? mediaMetadata : MediaMetadata.EMPTY,
           requestMetadata,
-          decode);
+          allowChunklessPreparation);
     }
   }
 
@@ -1958,7 +1958,7 @@ public final class MediaItem implements Bundleable {
   /** The media {@link RequestMetadata}. */
   public final RequestMetadata requestMetadata;
 
-  public final int decode;
+  public final boolean allowChunklessPreparation;
 
   // Using PlaybackProperties and ClippingProperties until they're deleted.
   @SuppressWarnings("deprecation")
@@ -1969,7 +1969,7 @@ public final class MediaItem implements Bundleable {
       LiveConfiguration liveConfiguration,
       MediaMetadata mediaMetadata,
       RequestMetadata requestMetadata,
-      int decode) {
+      boolean allowChunklessPreparation) {
     this.mediaId = mediaId;
     this.localConfiguration = localConfiguration;
     this.playbackProperties = localConfiguration;
@@ -1978,7 +1978,7 @@ public final class MediaItem implements Bundleable {
     this.clippingConfiguration = clippingConfiguration;
     this.clippingProperties = clippingConfiguration;
     this.requestMetadata = requestMetadata;
-    this.decode = decode;
+    this.allowChunklessPreparation = allowChunklessPreparation;
   }
 
   /** Returns a {@link Builder} initialized with the values of this instance. */
@@ -2027,7 +2027,7 @@ public final class MediaItem implements Bundleable {
     FIELD_MEDIA_METADATA,
     FIELD_CLIPPING_PROPERTIES,
     FIELD_REQUEST_METADATA,
-    FIELD_DECODE
+    FIELD_ALLOW_CHUNK_LESS
   })
   private @interface FieldNumber {}
 
@@ -2036,7 +2036,7 @@ public final class MediaItem implements Bundleable {
   private static final int FIELD_MEDIA_METADATA = 2;
   private static final int FIELD_CLIPPING_PROPERTIES = 3;
   private static final int FIELD_REQUEST_METADATA = 4;
-  private static final int FIELD_DECODE = 5;
+  private static final int FIELD_ALLOW_CHUNK_LESS = 5;
 
   /**
    * {@inheritDoc}
@@ -2052,7 +2052,7 @@ public final class MediaItem implements Bundleable {
     bundle.putBundle(keyForField(FIELD_MEDIA_METADATA), mediaMetadata.toBundle());
     bundle.putBundle(keyForField(FIELD_CLIPPING_PROPERTIES), clippingConfiguration.toBundle());
     bundle.putBundle(keyForField(FIELD_REQUEST_METADATA), requestMetadata.toBundle());
-    bundle.putInt(keyForField(FIELD_DECODE), decode);
+    bundle.putBoolean(keyForField(FIELD_ALLOW_CHUNK_LESS), allowChunklessPreparation);
     return bundle;
   }
 
@@ -2097,7 +2097,7 @@ public final class MediaItem implements Bundleable {
       requestMetadata = RequestMetadata.CREATOR.fromBundle(requestMetadataBundle);
     }
 
-    int decode = checkNotNull(bundle.getInt(keyForField(FIELD_DECODE), 1));
+    boolean allowChunklessPreparation = checkNotNull(bundle.getBoolean(keyForField(FIELD_ALLOW_CHUNK_LESS), true));
     return new MediaItem(
         mediaId,
         clippingConfiguration,
@@ -2105,7 +2105,7 @@ public final class MediaItem implements Bundleable {
         liveConfiguration,
         mediaMetadata,
         requestMetadata,
-        decode);
+        allowChunklessPreparation);
   }
 
   private static String keyForField(@FieldNumber int field) {

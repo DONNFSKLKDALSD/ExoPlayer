@@ -23,13 +23,11 @@ import android.media.MediaCodecInfo.CodecProfileLevel;
 import android.media.MediaCodecList;
 import android.text.TextUtils;
 import android.util.Pair;
-
 import androidx.annotation.CheckResult;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
-
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.util.Log;
@@ -38,15 +36,13 @@ import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.ColorInfo;
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
-
-import org.checkerframework.checker.nullness.qual.EnsuresNonNull;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.checkerframework.checker.nullness.qual.EnsuresNonNull;
 
 /** A utility class for querying the available codecs. */
 @SuppressLint("InlinedApi")
@@ -296,8 +292,7 @@ public final class MediaCodecUtil {
       if (codecProfileAndLevel != null) {
         int profile = codecProfileAndLevel.first;
         if (profile == CodecProfileLevel.DolbyVisionProfileDvheDtr
-            || profile == CodecProfileLevel.DolbyVisionProfileDvheSt
-            || profile == CodecProfileLevel.DolbyVisionProfileDvheDtb) {
+            || profile == CodecProfileLevel.DolbyVisionProfileDvheSt) {
           return MimeTypes.VIDEO_H265;
         } else if (profile == CodecProfileLevel.DolbyVisionProfileDvavSe) {
           return MimeTypes.VIDEO_H264;

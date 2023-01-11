@@ -127,7 +127,7 @@ public final class AspectRatioFrameLayout extends FrameLayout {
    * @param widthHeightRatio The width to height ratio.
    */
   public void setAspectRatio(float widthHeightRatio) {
-    if (this.videoAspectRatio != widthHeightRatio) {
+    if (this.videoAspectRatio != widthHeightRatio && widthHeightRatio > 0) {
       this.videoAspectRatio = widthHeightRatio;
       this.oriAspectRatio = videoAspectRatio;
       requestLayout();

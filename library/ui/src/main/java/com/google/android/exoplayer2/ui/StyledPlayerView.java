@@ -15,9 +15,14 @@
  */
 package com.google.android.exoplayer2.ui;
 
+import static com.google.android.exoplayer2.Player.COMMAND_GET_CURRENT_MEDIA_ITEM;
+import static com.google.android.exoplayer2.Player.COMMAND_GET_MEDIA_ITEMS_METADATA;
 import static com.google.android.exoplayer2.Player.COMMAND_GET_TEXT;
+import static com.google.android.exoplayer2.Player.COMMAND_GET_TIMELINE;
+import static com.google.android.exoplayer2.Player.COMMAND_GET_TRACKS;
 import static com.google.android.exoplayer2.Player.COMMAND_SET_VIDEO_SURFACE;
 import static com.google.android.exoplayer2.util.Assertions.checkNotNull;
+import static com.google.android.exoplayer2.util.Util.getDrawable;
 import static java.lang.annotation.ElementType.TYPE_USE;
 
 import android.annotation.SuppressLint;
@@ -291,9 +296,9 @@ public class StyledPlayerView extends FrameLayout implements AdViewProvider {
       overlayFrameLayout = null;
       ImageView logo = new ImageView(context);
       if (Util.SDK_INT >= 23) {
-        configureEditModeLogoV23(getResources(), logo);
+        configureEditModeLogoV23(context, getResources(), logo);
       } else {
-        configureEditModeLogo(getResources(), logo);
+        configureEditModeLogo(context, getResources(), logo);
       }
       addView(logo);
       return;
@@ -532,10 +537,12 @@ public class StyledPlayerView extends FrameLayout implements AdViewProvider {
     @Nullable Player oldPlayer = this.player;
     if (oldPlayer != null) {
       oldPlayer.removeListener(componentListener);
-      if (surfaceView instanceof TextureView) {
-        oldPlayer.clearVideoTextureView((TextureView) surfaceView);
-      } else if (surfaceView instanceof SurfaceView) {
-        oldPlayer.clearVideoSurfaceView((SurfaceView) surfaceView);
+      if (oldPlayer.isCommandAvailable(COMMAND_SET_VIDEO_SURFACE)) {
+        if (surfaceView instanceof TextureView) {
+          oldPlayer.clearVideoTextureView((TextureView) surfaceView);
+        } else if (surfaceView instanceof SurfaceView) {
+          oldPlayer.clearVideoSurfaceView((SurfaceView) surfaceView);
+        }
       }
     }
     if (subtitleView != null) {
@@ -738,7 +745,9 @@ public class StyledPlayerView extends FrameLayout implements AdViewProvider {
 
   @Override
   public boolean dispatchKeyEvent(KeyEvent event) {
-    if (player != null && player.isPlayingAd()) {
+    if (player != null
+        && player.isCommandAvailable(COMMAND_GET_CURRENT_MEDIA_ITEM)
+        && player.isPlayingAd()) {
       return super.dispatchKeyEvent(event);
     }
 
@@ -871,8 +880,8 @@ public class StyledPlayerView extends FrameLayout implements AdViewProvider {
   /**
    * Sets the {@link StyledPlayerControlView.VisibilityListener}.
    *
-   * <p>Removes any listener set by {@link
-   * #setControllerVisibilityListener(StyledPlayerControlView.VisibilityListener)}.
+   * <p>If {@code listener} is non-null then any listener set by {@link
+   * #setControllerVisibilityListener(StyledPlayerControlView.VisibilityListener)} is removed.
    *
    * @param listener The listener to be notified about visibility changes, or null to remove the
    *     current listener.
@@ -880,14 +889,16 @@ public class StyledPlayerView extends FrameLayout implements AdViewProvider {
   @SuppressWarnings("deprecation") // Clearing the legacy listener.
   public void setControllerVisibilityListener(@Nullable ControllerVisibilityListener listener) {
     this.controllerVisibilityListener = listener;
-    setControllerVisibilityListener((StyledPlayerControlView.VisibilityListener) null);
+    if (listener != null) {
+      setControllerVisibilityListener((StyledPlayerControlView.VisibilityListener) null);
+    }
   }
 
   /**
    * Sets the {@link StyledPlayerControlView.VisibilityListener}.
    *
-   * <p>Removes any listener set by {@link
-   * #setControllerVisibilityListener(ControllerVisibilityListener)}.
+   * <p>If {@code listener} is non-null then any listener set by {@link
+   * #setControllerVisibilityListener(ControllerVisibilityListener)} is removed.
    *
    * @deprecated Use {@link #setControllerVisibilityListener(ControllerVisibilityListener)} instead.
    */
@@ -906,8 +917,8 @@ public class StyledPlayerView extends FrameLayout implements AdViewProvider {
     this.legacyControllerVisibilityListener = listener;
     if (listener != null) {
       controller.addVisibilityListener(listener);
+      setControllerVisibilityListener((ControllerVisibilityListener) null);
     }
-    setControllerVisibilityListener((ControllerVisibilityListener) null);
   }
 
   /**
@@ -1240,7 +1251,8 @@ public class StyledPlayerView extends FrameLayout implements AdViewProvider {
     }
     int playbackState = player.getPlaybackState();
     return controllerAutoShow
-        && !player.getCurrentTimeline().isEmpty()
+        && (!player.isCommandAvailable(COMMAND_GET_TIMELINE)
+            || !player.getCurrentTimeline().isEmpty())
         && (playbackState == Player.STATE_IDLE
             || playbackState == Player.STATE_ENDED
             || !checkNotNull(player).getPlayWhenReady());
@@ -1255,12 +1267,17 @@ public class StyledPlayerView extends FrameLayout implements AdViewProvider {
   }
 
   private boolean isPlayingAd() {
-    return player != null && player.isPlayingAd() && player.getPlayWhenReady();
+    return player != null
+        && player.isCommandAvailable(COMMAND_GET_CURRENT_MEDIA_ITEM)
+        && player.isPlayingAd()
+        && player.getPlayWhenReady();
   }
 
   private void updateForCurrentTrackSelections(boolean isNewPlayer) {
     @Nullable Player player = this.player;
-    if (player == null || player.getCurrentTracks().isEmpty()) {
+    if (player == null
+        || !player.isCommandAvailable(COMMAND_GET_TRACKS)
+        || player.getCurrentTracks().isEmpty()) {
       if (!keepContentOnPlayerReset) {
         hideArtwork();
         closeShutter();
@@ -1284,7 +1301,7 @@ public class StyledPlayerView extends FrameLayout implements AdViewProvider {
     closeShutter();
     // Display artwork if enabled and available, else hide it.
     if (useArtwork()) {
-      if (setArtworkFromMediaMetadata(player.getMediaMetadata())) {
+      if (setArtworkFromMediaMetadata(player)) {
         return;
       }
       if (setDrawableArtwork(defaultArtwork)) {
@@ -1296,7 +1313,11 @@ public class StyledPlayerView extends FrameLayout implements AdViewProvider {
   }
 
   @RequiresNonNull("artworkView")
-  private boolean setArtworkFromMediaMetadata(MediaMetadata mediaMetadata) {
+  private boolean setArtworkFromMediaMetadata(Player player) {
+    if (!player.isCommandAvailable(COMMAND_GET_MEDIA_ITEMS_METADATA)) {
+      return false;
+    }
+    MediaMetadata mediaMetadata = player.getMediaMetadata();
     if (mediaMetadata.artworkData == null) {
       return false;
     }
@@ -1419,13 +1440,14 @@ public class StyledPlayerView extends FrameLayout implements AdViewProvider {
   }
 
   @RequiresApi(23)
-  private static void configureEditModeLogoV23(Resources resources, ImageView logo) {
-    logo.setImageDrawable(resources.getDrawable(R.drawable.exo_edit_mode_logo, null));
+  private static void configureEditModeLogoV23(
+      Context context, Resources resources, ImageView logo) {
+    logo.setImageDrawable(getDrawable(context, resources, R.drawable.exo_edit_mode_logo));
     logo.setBackgroundColor(resources.getColor(R.color.exo_edit_mode_background_color, null));
   }
 
-  private static void configureEditModeLogo(Resources resources, ImageView logo) {
-    logo.setImageDrawable(resources.getDrawable(R.drawable.exo_edit_mode_logo));
+  private static void configureEditModeLogo(Context context, Resources resources, ImageView logo) {
+    logo.setImageDrawable(getDrawable(context, resources, R.drawable.exo_edit_mode_logo));
     logo.setBackgroundColor(resources.getColor(R.color.exo_edit_mode_background_color));
   }
 
@@ -1514,10 +1536,14 @@ public class StyledPlayerView extends FrameLayout implements AdViewProvider {
       // is necessary to avoid closing the shutter when such a transition occurs. See:
       // https://github.com/google/ExoPlayer/issues/5507.
       Player player = checkNotNull(StyledPlayerView.this.player);
-      Timeline timeline = player.getCurrentTimeline();
+      Timeline timeline =
+          player.isCommandAvailable(COMMAND_GET_TIMELINE)
+              ? player.getCurrentTimeline()
+              : Timeline.EMPTY;
       if (timeline.isEmpty()) {
         lastPeriodUidWithTracks = null;
-      } else if (!player.getCurrentTracks().isEmpty()) {
+      } else if (player.isCommandAvailable(COMMAND_GET_TRACKS)
+          && !player.getCurrentTracks().isEmpty()) {
         lastPeriodUidWithTracks =
             timeline.getPeriod(player.getCurrentPeriodIndex(), period, /* setIds= */ true).uid;
       } else if (lastPeriodUidWithTracks != null) {
